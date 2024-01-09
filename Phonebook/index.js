@@ -1,9 +1,11 @@
 const express = require('express')
 const app = express()
+const morgan = require('morgan')
 const cors = require('cors')
-const baseUrl = 'http://localhost:3000/api/persons'
+const baseUrl = 'http://localhost:3000/api/persons/'
 
 app.use(express.json())
+app.use(morgan('tiny'))
 app.use(cors())
 app.use(express.static('dist'))
 
@@ -54,6 +56,17 @@ app.get('/api/persons', (request, response) => {
   response.json(persons)
 })
 
+// defining custom morgan token and content of token, omitting id by copying all but id
+
+morgan.token('request-body', (req) => { 
+  const { id, ...idOmittedBody } = req.body
+  return JSON.stringify(idOmittedBody)
+})
+
+// morgan token content with standard content and custom token
+
+app.use(morgan(':method :url :status :response-time ms - :res[content-length] :request-body'))
+
 //get person by id
 
 app.get('/api/persons/:id', (request, response) => {
@@ -71,22 +84,41 @@ app.get('/api/persons/:id', (request, response) => {
 
 app.delete('/api/persons/:id', (request, response) => {
   const id = Number(request.params.id)
-  persons = persons.filter(person => person.id !== id)
-  console.log(persons[id])
+  updatePersons = persons.filter(person => person.id !== id)
+
+  if(updatePersons.length === persons.length) {
+    return response.status(404).json({error:"Not found"})
+  }
+
+  persons = updatePersons
 
   response.status(204).end()
 })
 
 //add person and create id
 
-app.post(baseUrl, (request, response) => {
+app.post('/api/persons', (request, response) => {
   const body = request.body
+  
+  if(body.name === "" || body.number === "") {
+    response.status(400).json({error: "Name or number missing"})
+  }
+
+  duplicatePerson = persons.filter(person => person.name !== body.name)
+
+
+  if(duplicatePerson.length !== persons.length) {
+    response.status(400).json({error: "Name has to be unique"})
+  }
+
   const addId = () => {
-    min = Math.ceil(1)
-    max = Math.floor(25000)
+    const min = Math.ceil(1)
+    const max = Math.floor(25000)
     return Math.floor(Math.random() * (max - min) + min)
   }
   body.id = addId()
+
+  persons = persons.concat(body)
 
   response.status(204).end()
 })
