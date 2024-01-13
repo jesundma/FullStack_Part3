@@ -8,24 +8,35 @@ if (process.argv.length<3) {
 const password = process.argv[2]
 
 const url =
-  `mongodb+srv://JSundman:${password}@cluster0.2ymmr5x.mongodb.net/?retryWrites=true&w=majority`
+  `mongodb+srv://JSundman:${password}@cluster0.2ymmr5x.mongodb.net/DatabaseTesting?retryWrites=true&w=majority`
+
 
 mongoose.set('strictQuery',false)
 mongoose.connect(url)
 
 const noteSchema = new mongoose.Schema({
-  content: String,
-  important: Boolean,
+  name: String,
+  number: String,
 })
 
-const Note = mongoose.model('Note', noteSchema)
+const Person = mongoose.model('Phonebook', noteSchema)
 
-const note = new Note({
-  content: 'HTML is Easy',
-  important: true,
-})
+if (process.argv.length > 3) {
+  const person = new Person({
+    name: process.argv[3],
+    number: process.argv[4],
+  })
 
-note.save().then(result => {
-  console.log('note saved!')
-  mongoose.connection.close()
-})
+  person.save().then(result => {
+    console.log(`Added ${process.argv[3]} number ${process.argv[4]} to phonebook`)
+    mongoose.connection.close()
+  })
+} else {
+  console.log('Phonebook:')
+  Person.find({}).then(result => {
+    result.forEach(person => {
+      console.log(person.name, person.number)
+    })
+    mongoose.connection.close()
+  })
+}
