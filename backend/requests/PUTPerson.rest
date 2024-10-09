@@ -1,8 +1,0 @@
-PUT https://phonebkbackend.fly.dev/api/persons/66ffa13d6fee279b04888712
-
-Content-Type: application/json
-
-{
-    "name": "jorma",
-    "number": "1234546"
-}
